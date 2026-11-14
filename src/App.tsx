@@ -2,32 +2,27 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Game } from './components/Game'
 import { Entrance, WaitingRoom } from './components/Lobby'
+import { LangSwitch } from './components/Menu'
 import { RulesSheet } from './components/RulesSheet'
 import { useSession } from './network/useSession'
 
 export default function App() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const session = useSession()
   const [rules, setRules] = useState(false)
   const inGame = !!session.room && !!session.view
 
-  const tools = (
-    <div className="tools">
-      <button type="button" className="btn btn-ghost btn-small" onClick={() => setRules(true)}>{t('app.rules')}</button>
-      <button type="button" className="btn btn-ghost btn-small" onClick={() => i18n.changeLanguage(i18n.language === 'de' ? 'en' : 'de')}>
-        {t('app.language')}
-      </button>
-    </div>
-  )
-
   return (
     <>
       {inGame ? (
-        <Game session={session} tools={tools} />
+        <Game session={session} onRules={() => setRules(true)} />
       ) : (
         <main className="lobby">
           <header className="lobby-head">
-            {tools}
+            <div className="tools">
+              <button type="button" className="btn btn-ghost btn-small" onClick={() => setRules(true)}>{t('app.rules')}</button>
+              <LangSwitch />
+            </div>
             <h1>{t('app.title')}</h1>
             <p className="muted">{t('app.tagline')}</p>
           </header>
