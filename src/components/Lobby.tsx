@@ -105,14 +105,20 @@ export function WaitingRoom({ session }: { session: Session }) {
       // Clipboard needs a secure context; the link can still be selected by hand.
     }
   }
+  const share = () => navigator.share({ title: t('app.title'), text: t('lobby.shareText'), url: link }).catch(() => {})
+  const free = Math.max(0, MAX_PLAYERS - room.seats.length)
   return (
     <div className="panel entrance">
-      <h2>{t('lobby.table', { id: room.id })}</h2>
+      <div className="table-code">
+        <span className="muted small">{t('lobby.code')}</span>
+        <strong>{room.id}</strong>
+      </div>
       <label>
         {t('lobby.invite')}
         <span className="join-row">
           <input readOnly value={link} onFocus={e => e.target.select()} />
           <button type="button" className="btn" onClick={copy}>{copied ? t('lobby.copied') : t('lobby.copy')}</button>
+          {typeof navigator.share === 'function' && <button type="button" className="btn" onClick={share}>{t('lobby.share')}</button>}
         </span>
       </label>
       <p className="muted small">{t('lobby.inviteHint')}</p>
@@ -130,6 +136,12 @@ export function WaitingRoom({ session }: { session: Session }) {
                 {t('lobby.remove')}
               </button>
             )}
+          </li>
+        ))}
+        {Array.from({ length: free }, (_, i) => (
+          <li key={`free-${i}`} className="seat-free">
+            {t('lobby.freeSeat')}
+            {room.seats.length + i < MIN_PLAYERS && <span className="badge">{t('lobby.needed')}</span>}
           </li>
         ))}
       </ul>

@@ -1,0 +1,27 @@
+.offers { display: grid; gap: var(--s2); }
+.offer { background: #ffffff0d; border-radius: 10px; padding: 10px; display: grid; gap: 6px; border: 1px solid transparent; }
+.offer-for-me { border-color: var(--accent); background: var(--accent-soft); }
+.offer-head { font-weight: 700; }
+.offer-side, .tray { display: grid; grid-template-columns: 6.2em minmax(0, 1fr); gap: var(--s2); align-items: baseline; }
+.offer-label { color: var(--muted); font-size: .8rem; }
+.offer-cards { display: flex; flex-wrap: wrap; gap: var(--s1); align-items: center; min-height: 24px; }
+.offer-note { color: var(--ok); }
+.offer-note.is-warn { color: var(--warn); }
+.other-offers summary { cursor: pointer; color: var(--muted); font-size: .85rem; padding: var(--s1) 0; }
+.other-offers ul { display: grid; gap: 6px; padding-top: var(--s1); }
+.other-offers li { line-height: 1.9; }
+.other-offers .chip { margin-right: 2px; }
+
+.builder { display: grid; gap: var(--s3); }
+.trays { display: grid; gap: var(--s2); background: #ffffff0d; border-radius: 10px; padding: 10px; }
+.tray { align-items: center; }
+.pick-row { display: grid; gap: 6px; }
+.pick-label { font-size: .8rem; color: var(--muted); }
+.palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
+.palette-btn { position: relative; font: inherit; font-size: .8rem; font-weight: 600; color: var(--card-ink); background: var(--card); border: 1.5px solid transparent; border-radius: var(--radius-sm); min-height: 40px; padding: 4px 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; text-align: left; min-width: 0; }
+.palette-btn > span:nth-child(2) { min-width: 0; line-height: 1.15; hyphens: auto; overflow-wrap: anywhere; }
+.palette-btn.is-on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.palette-btn:disabled { opacity: .45; cursor: not-allowed; }
+.palette-btn .count { position: absolute; top: -7px; right: -5px; }
+.builder-actions { position: sticky; bottom: 0; background: var(--panel); padding-top: var(--s2); }
+.builder-actions .btn-primary { flex: 1; }

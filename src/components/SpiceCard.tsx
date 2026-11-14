@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { createContext, useContext, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SPICE_INFO, type Spice } from '../engine/cards'
 
@@ -13,6 +13,9 @@ export const SPICE_COLOR: Record<Spice, string> = {
   vanilla: '#3f6f8f',
   saffron: '#d9480f',
 }
+
+/** The spice the Royal Order currently names; cards and stalls of it carry a crown. */
+export const RoyalContext = createContext<Spice | null>(null)
 
 const ICONS: Record<Spice, ReactNode> = {
   pepper: (
@@ -70,32 +73,56 @@ export function SpiceIcon({ spice, size = 20 }: { spice: Spice; size?: number })
   )
 }
 
+export function Crown({ size = 14 }: { size?: number }) {
+  const { t } = useTranslation()
+  return (
+    <svg className="crown" viewBox="0 0 24 24" width={size} height={size} role="img" aria-label={t('game.royalOrder')}>
+      <title>{t('game.royalOrder')}: {t('game.royalHint')}</title>
+      <path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z" fill="currentColor" />
+    </svg>
+  )
+}
+
+/**
+ * The sale table of one spice: card counts on top, the gold they pay below.
+ * With `count`, the steps a stall has already reached are lit and the next one is marked.
+ */
+export function Ladder({ spice, count }: { spice: Spice; count?: number }) {
+  const royal = useContext(RoyalContext) === spice
+  const sales = SPICE_INFO[spice].sales
+  const next = count === undefined ? -1 : sales.findIndex(([cards]) => cards > count)
+  return (
+    <span className="ladder" aria-hidden="true">
+      {sales.map(([cards, gold], i) => (
+        <span key={cards} className={`rung ${count !== undefined && count >= cards ? 'is-reached' : ''} ${i === next ? 'is-next' : ''}`}>
+          <span className="rung-cards">{cards}</span>
+          <span className="rung-gold">{royal && count !== undefined ? gold + 1 : gold}</span>
+        </span>
+      ))}
+    </span>
+  )
+}
+
 interface CardProps {
   spice: Spice
   small?: boolean
   selected?: boolean
-  dimmed?: boolean
   tag?: string
   onClick?: () => void
 }
 
-/** A spice card: icon, name and the card counts that pay 1/2/3/4 gold. */
-export function SpiceCard({ spice, small, selected, dimmed, tag, onClick }: CardProps) {
+/** A spice card: icon, name and its sale table. */
+export function SpiceCard({ spice, small, selected, tag, onClick }: CardProps) {
   const { t } = useTranslation()
-  const cls = ['card', small && 'card-sm', selected && 'card-selected', dimmed && 'card-dimmed', onClick && 'card-click']
-    .filter(Boolean).join(' ')
+  const royal = useContext(RoyalContext) === spice
+  const cls = ['card', small && 'card-sm', selected && 'card-selected', onClick && 'card-click'].filter(Boolean).join(' ')
   const body = (
     <>
       {tag && <span className="card-tag">{tag}</span>}
+      {royal && <span className="card-crown"><Crown size={small ? 11 : 13} /></span>}
       <SpiceIcon spice={spice} size={small ? 22 : 30} />
       <span className="card-name">{t(`spice.${spice}`)}</span>
-      {!small && (
-        <span className="card-sales" aria-hidden="true">
-          {SPICE_INFO[spice].sales.map(([cards, gold]) => (
-            <span key={gold}><b>{cards}</b>→{gold}</span>
-          ))}
-        </span>
-      )}
+      {!small && <Ladder spice={spice} />}
     </>
   )
   const style = { '--spice': SPICE_COLOR[spice] } as React.CSSProperties
@@ -106,18 +133,28 @@ export function SpiceCard({ spice, small, selected, dimmed, tag, onClick }: Card
   )
 }
 
-/** Compact inline mention of some cards, e.g. in an offer. */
-export function SpiceChips({ cards, tag }: { cards: Spice[]; tag?: string }) {
+/** Compact inline mention of some cards, e.g. in an offer. With `onRemove` each chip is a button. */
+export function SpiceChips({ cards, tag, onRemove }: { cards: Spice[]; tag?: string; onRemove?: (index: number) => void }) {
   const { t } = useTranslation()
   return (
     <>
-      {cards.map((s, i) => (
-        <span key={i} className="chip" style={{ '--spice': SPICE_COLOR[s] } as React.CSSProperties}>
-          <SpiceIcon spice={s} size={14} />
-          {t(`spice.${s}`)}
-          {tag && <em>{tag}</em>}
-        </span>
-      ))}
+      {cards.map((s, i) => {
+        const style = { '--spice': SPICE_COLOR[s] } as React.CSSProperties
+        const body = (
+          <>
+            <SpiceIcon spice={s} size={14} />
+            {t(`spice.${s}`)}
+            {tag && <em>{tag}</em>}
+          </>
+        )
+        return onRemove ? (
+          <button key={i} type="button" className="chip chip-remove" style={style} onClick={() => onRemove(i)}>
+            {body}<span aria-hidden="true">×</span><span className="sr-only"> {t('trade.remove')}</span>
+          </button>
+        ) : (
+          <span key={i} className="chip" style={style}>{body}</span>
+        )
+      })}
     </>
   )
 }
