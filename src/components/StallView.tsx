@@ -31,6 +31,8 @@ export function StallView({ player, index, placing, needRoom, locked, onPlace, o
   const next = st.spice ? SPICE_INFO[st.spice].sales.find(([cards]) => cards > st.count) : undefined
   const target = !locked && placing !== null && canPlace(player, placing, index)
   const sellable = !locked && canSell(player, index)
+  // Step back only while another stall is the place to tap; if the card fits nowhere, selling needs full attention.
+  const elsewhere = !locked && !target && placing !== null && player.stalls.some((_, i) => canPlace(player, placing, i))
   const style = st.spice ? ({ '--spice': SPICE_COLOR[st.spice] } as React.CSSProperties) : undefined
 
   const pileClass = `pile ${st.spice ? '' : 'pile-free'} ${st.count > 1 ? 'pile-stack' : ''}`
@@ -49,7 +51,7 @@ export function StallView({ player, index, placing, needRoom, locked, onPlace, o
   )
 
   return (
-    <div className={`stall ${target ? 'is-target' : ''} ${placing && !target ? 'is-off' : ''}`}>
+    <div className={`stall ${target ? 'is-target' : ''} ${elsewhere ? 'is-off' : ''}`}>
       <div className="stall-title">
         {t('game.stall', { n: index + 1 })}
         {st.spice && st.spice === royal && <Crown />}
