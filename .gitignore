@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-server
+*.log
+.env
+.env.local
+.vscode
+.idea
+# Third-party rulebook (copyrighted, not part of this project)
+*.pdf
