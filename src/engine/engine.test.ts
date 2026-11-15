@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { buildDeck, saleGold, SPICES, SPICE_INFO, type Spice } from './cards'
+import { buildDeck, DECK_COUNT, saleGold, SPICES, SPICE_INFO, type Spice } from './cards'
 import { chooseAction } from './ai'
-import { applyAction, canSell, createGame, viewFor } from './engine'
+import { applyAction, canSell, createGame, everyoneDoneTrading, viewFor } from './engine'
 import type { Action, GameState } from './types'
 
 const seats = (n: number) => Array.from({ length: n }, (_, i) => ({ name: `P${i}`, isAI: true }))
@@ -19,7 +19,7 @@ function fail(state: GameState, pi: number, action: Action): string {
 }
 
 function totalCards(s: GameState): number {
-  return s.deck.length + s.discard.length + s.market.length + s.players.reduce(
+  return s.deck.length + s.discard.length + s.market.length + Object.values(s.goldCards).reduce((n, g) => n + g, 0) + s.players.reduce(
     (n, p) => n + p.caravan.length + p.pending.length + p.stalls.reduce((m, st) => m + st.count, 0), 0)
 }
 
@@ -38,8 +38,8 @@ function rigged(caravans: Spice[][]): GameState {
 }
 
 describe('cards', () => {
-  it('has 110 cards and ascending sale tables', () => {
-    expect(buildDeck()).toHaveLength(110)
+  it('has 104 cards and ascending sale tables', () => {
+    expect(buildDeck()).toHaveLength(104)
     for (const s of SPICES) {
       const sales = SPICE_INFO[s].sales
       for (let i = 1; i < sales.length; i++) {
@@ -53,7 +53,8 @@ describe('cards', () => {
     expect(saleGold('pepper', 3)).toBe(0)
     expect(saleGold('pepper', 7)).toBe(2)
     expect(saleGold('saffron', 2)).toBe(2)
-    expect(saleGold('saffron', 4)).toBe(4)
+    expect(saleGold('saffron', 3)).toBe(3)
+    expect(saleGold('saffron', 6)).toBe(3)
   })
 })
 
@@ -61,7 +62,7 @@ describe('turn flow', () => {
   it('deals five cards each and hides other caravans', () => {
     const s = createGame(seats(4), 7)
     expect(s.players.every(p => p.caravan.length === 5)).toBe(true)
-    expect(totalCards(s)).toBe(110)
+    expect(totalCards(s)).toBe(104)
     const v = viewFor(s, 1)
     expect(v.players[1].caravan).toEqual(s.players[1].caravan)
     expect(v.players[0].caravan).toBeUndefined()
@@ -101,7 +102,7 @@ describe('turn flow', () => {
     expect(s.active).toBe(1)
     expect(s.phase).toBe('stock')
     expect(s.players[0].caravan).toHaveLength(1 + 3)
-    expect(totalCards(s)).toBe(110)
+    expect(totalCards(s)).toBe(104)
   })
 })
 
@@ -116,15 +117,39 @@ describe('selling', () => {
     expect(canSell(p, 0)).toBe(true)
   })
 
-  it('pays the Royal Order bonus only on a paying sale', () => {
+  it('pays the sale table on a sale and discards the cards', () => {
     let s = createGame(seats(3), 3)
-    s.royalOrder = 'cumin'
     s.players[1].stalls = [{ spice: 'cumin', count: 3 }, { spice: 'cumin', count: 2 }]
     s = act(s, 1, { type: 'sell', stall: 0 })
-    expect(s.players[1].gold).toBe(2)
+    expect(s.players[1].gold).toBe(1)
     s = act(s, 1, { type: 'sell', stall: 1 })
-    expect(s.players[1].gold).toBe(2)
-    expect(s.discard.filter(c => c === 'cumin')).toHaveLength(5)
+    expect(s.players[1].gold).toBe(1)
+    // The one card paid out as gold leaves the game; the other four are discarded.
+    expect(s.goldCards.cumin).toBe(1)
+    expect(s.discard.filter(c => c === 'cumin')).toHaveLength(4)
+  })
+
+  it('tracks who is done trading during the market', () => {
+    let s = createGame(seats(3), 3)
+    s.players[1].isAI = false
+    s.players[2].isAI = false
+    expect(fail(s, 1, { type: 'doneTrading', done: true })).toBe('NOT_NOW')
+    s = act(s, 0, { type: 'stock', stall: 0 })
+    s = act(s, 0, { type: 'endStock' })
+    expect(fail(s, 0, { type: 'doneTrading', done: true })).toBe('NOT_NOW')
+    s = act(s, 1, { type: 'doneTrading', done: true })
+    expect(everyoneDoneTrading(s)).toBe(false)
+    s = act(s, 2, { type: 'doneTrading', done: true })
+    expect(everyoneDoneTrading(s)).toBe(true)
+    expect(viewFor(s, 0).players[1].doneTrading).toBe(true)
+    // A new offer from the active player to everyone reopens trading for all.
+    s = act(s, 0, { type: 'propose', to: null, give: [], giveFromMarket: [s.market[0]], want: [], wantFromMarket: [] })
+    expect(s.players[1].doneTrading).toBe(false)
+    expect(everyoneDoneTrading(s)).toBe(false)
+    // Making an offer yourself also means you are still trading.
+    s = act(s, 2, { type: 'doneTrading', done: true })
+    s = act(s, 2, { type: 'propose', to: 0, give: [], giveFromMarket: [], want: [], wantFromMarket: [s.market[1]] })
+    expect(s.players[2].doneTrading).toBe(false)
   })
 
   it('sells a third stall for 3 gold on your own turn only', () => {
@@ -140,7 +165,7 @@ describe('selling', () => {
 
 describe('trading', () => {
   function atMarket(): GameState {
-    let s = rigged([['pepper', 'cumin', 'clove'], ['ginger', 'nutmeg'], ['vanilla', 'ginger']])
+    let s = rigged([['pepper', 'cumin', 'clove'], ['ginger', 'nutmeg'], ['cardamom', 'ginger']])
     s = act(s, 0, { type: 'stock', stall: 0 })
     s = act(s, 0, { type: 'endStock' })
     s.deck.push(...s.market)
@@ -159,7 +184,7 @@ describe('trading', () => {
     expect(s.players[0].caravan).toEqual(['clove'])
     expect(s.players[1].caravan).toEqual(['nutmeg'])
     expect(s.market).toEqual(['cinnamon'])
-    expect(totalCards(s)).toBe(110)
+    expect(totalCards(s)).toBe(104)
   })
 
   it('only allows trades that involve the active player', () => {
@@ -172,7 +197,7 @@ describe('trading', () => {
   it('lets anyone take an open offer once, and drops offers that lost their cards', () => {
     let s = atMarket()
     s = act(s, 0, { type: 'propose', ...none, to: null, giveFromMarket: ['saffron'] })
-    s = act(s, 2, { type: 'propose', ...none, to: 0, give: ['vanilla'], wantFromMarket: ['saffron'] })
+    s = act(s, 2, { type: 'propose', ...none, to: 0, give: ['cardamom'], wantFromMarket: ['saffron'] })
     const open = s.offers[0].id
     s = act(s, 1, { type: 'accept', offerId: open })
     expect(s.offers).toHaveLength(0)
@@ -203,23 +228,53 @@ describe('trading', () => {
 })
 
 describe('game end', () => {
-  it('finishes the round after the last run-out, sells everything and names the winner', () => {
+  /** A game on its last deck with only `left` cards in it. */
+  function lastDeck(left: number): GameState {
+    const s = createGame(seats(3), 5)
+    s.discard.push(...s.deck.splice(0, s.deck.length - left))
+    s.runOuts = DECK_COUNT - 1
+    return s
+  }
+
+  it('shuffles the discard pile into a new deck twice, then never again', () => {
     let s = createGame(seats(3), 5)
-    s.discard.push(...s.deck.splice(0, s.deck.length - 4))
-    s.runOuts = s.runOutLimit - 1
+    s.discard.push(...s.deck.splice(0, s.deck.length - 1))
+    s = act(s, 0, { type: 'stock', stall: 0 })
+    s = act(s, 0, { type: 'endStock' })
+    expect(s.runOuts).toBe(1)
+    expect(s.market).toHaveLength(2)
+    expect(s.discard).toHaveLength(0)
+    expect(totalCards(s)).toBe(104)
+  })
+
+  it('ends at once when the last deck cannot fill the market, and names the winner', () => {
+    let s = lastDeck(1)
     s.players[2].gold = 50
-    let guard = 0
-    while (s.phase !== 'ended') {
-      expect(guard++).toBeLessThan(2000)
-      const pi = [s.active, 0, 1, 2].find(i => {
-        const a = chooseAction(s, i)
-        return a && (a.type !== 'closeMarket' || i === s.active)
-      })!
-      s = act(s, pi, chooseAction(s, pi)!)
-      if (s.finalRound && s.phase !== 'ended') expect(s.turn).toBeLessThanOrEqual(3)
-    }
+    s.players[1].stalls[0] = { spice: 'pepper', count: 4 }
+    s = act(s, 0, { type: 'stock', stall: 0 })
+    s = act(s, 0, { type: 'endStock' })
+    expect(s.phase).toBe('ended')
+    expect(s.market).toHaveLength(0)
+    expect(s.deck).toHaveLength(1)
+    expect(s.players[1].gold).toBe(1)
     expect(s.winners).toEqual([2])
     expect(s.players.every(p => p.stalls.every(st => st.count === 0))).toBe(true)
     expect(viewFor(s, 0).players[1].caravan).toBeDefined()
+  })
+
+  it('ends at once when the last deck cannot resupply the active player', () => {
+    let s = lastDeck(4)
+    s = act(s, 0, { type: 'stock', stall: 0 })
+    s = act(s, 0, { type: 'endStock' })
+    const caravan = s.players[0].caravan.length
+    let guard = 0
+    while (s.phase !== 'ended') {
+      expect(guard++).toBeLessThan(50)
+      expect(s.active).toBe(0)
+      const a = chooseAction(s, 0)!
+      s = act(s, 0, a.type === 'propose' ? { type: 'closeMarket' } : a)
+    }
+    expect(s.players[0].caravan).toHaveLength(caravan)
+    expect(s.deck).toHaveLength(2)
   })
 })

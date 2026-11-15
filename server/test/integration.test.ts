@@ -143,6 +143,48 @@ describe('game server', () => {
     await thief.until(() => thief.errors.includes('GAME_STARTED'), 'late join refused')
   })
 
+  it('closes an AI market once every person is done trading, without waiting for the time limit', async () => {
+    await server.close()
+    server = createGameServer({ aiDelayMs: 1, aiMarketMs: 60_000 }, '/nonexistent')
+    await new Promise<void>(resolve => server.http.listen(0, resolve))
+    url = `ws://localhost:${(server.http.address() as AddressInfo).port}/ws`
+
+    const host = await connect()
+    host.send({ type: 'create', name: 'Ada' })
+    await host.until(() => !!host.room, 'room')
+    host.send({ type: 'addAI' })
+    host.send({ type: 'addAI' })
+    await host.until(() => host.room?.seats.length === 3, 'seats')
+    host.send({ type: 'start' })
+    await host.until(() => !!host.view, 'game')
+
+    // Play my own seat until an AI has its market open.
+    const { chooseAction } = await import('../../src/engine/ai')
+    const aiMarket = () => host.view!.phase === 'market' && host.view!.active !== host.view!.you
+    const deadline = Date.now() + 10_000
+    let seen: GameView | null = null
+    while (!aiMarket()) {
+      if (Date.now() > deadline) throw new Error('no AI market opened')
+      const v = host.view!
+      if (v !== seen) {
+        seen = v
+        const state = { ...v, players: v.players.map(p => ({ ...p, caravan: p.caravan ?? [] })), deck: [], discard: [], posted: [], nextOfferId: 0, logSeq: 0, rng: 0 }
+        let action = chooseAction(state as never, v.you)
+        if (action?.type === 'propose') action = v.active === v.you ? { type: 'closeMarket' } : null
+        if (action) host.send({ type: 'action', action })
+      }
+      await new Promise(r => setTimeout(r, 2))
+    }
+
+    // The market stays open while I am still trading...
+    const turn = host.view!.turn
+    await new Promise(r => setTimeout(r, 300))
+    expect(host.view!.turn === turn && host.view!.phase === 'market').toBe(true)
+    // ...and closes right after I say I am done, long before the 60 s limit.
+    host.send({ type: 'action', action: { type: 'doneTrading', done: true } })
+    await host.until(() => host.view!.turn !== turn || host.view!.phase !== 'market', 'market closed')
+  })
+
   it('lets the host hand a dropped seat to an AI, and the game then runs to its end', async () => {
     const host = await connect()
     host.send({ type: 'create', name: 'Ada' })

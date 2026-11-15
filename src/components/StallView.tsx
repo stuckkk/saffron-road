@@ -1,9 +1,9 @@
-import { useContext, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SPICE_INFO, type Spice } from '../engine/cards'
 import { canPlace, canSell, stallSaleValue } from '../engine/engine'
 import type { PlayerView } from '../engine/types'
-import { Crown, Ladder, RoyalContext, SPICE_COLOR, SpiceIcon } from './SpiceCard'
+import { Ladder, SPICE_COLOR, SpiceIcon } from './SpiceCard'
 
 interface Props {
   player: PlayerView
@@ -20,14 +20,13 @@ interface Props {
 /** One of my stalls: what it holds, what it pays, and the two things I can do with it. */
 export function StallView({ player, index, placing, needRoom, locked, onPlace, onSell }: Props) {
   const { t } = useTranslation()
-  const royal = useContext(RoyalContext)
   const st = player.stalls[index]
   // The question is about one particular pile: forget it as soon as the pile changes.
   const pile = `${st.spice}:${st.count}`
   const [askedFor, setAskedFor] = useState<string | null>(null)
   const asking = askedFor === pile
 
-  const value = stallSaleValue(st.spice, st.count, royal ?? 'pepper')
+  const value = stallSaleValue(st.spice, st.count)
   const next = st.spice ? SPICE_INFO[st.spice].sales.find(([cards]) => cards > st.count) : undefined
   const target = !locked && placing !== null && canPlace(player, placing, index)
   const sellable = !locked && canSell(player, index)
@@ -54,7 +53,6 @@ export function StallView({ player, index, placing, needRoom, locked, onPlace, o
     <div className={`stall ${target ? 'is-target' : ''} ${elsewhere ? 'is-off' : ''}`}>
       <div className="stall-title">
         {t('game.stall', { n: index + 1 })}
-        {st.spice && st.spice === royal && <Crown />}
       </div>
 
       {target ? (
@@ -69,7 +67,7 @@ export function StallView({ player, index, placing, needRoom, locked, onPlace, o
       {st.spice && (
         <p className="stall-worth small">
           {value > 0 ? t('game.worth', { gold: value }) : t('game.worthNone')}
-          <span className="muted"> · {next ? t('game.next', { n: next[0] - st.count, gold: next[1] + (st.spice === royal ? 1 : 0) }) : t('game.maxed')}</span>
+          <span className="muted"> · {next ? t('game.next', { n: next[0] - st.count, gold: next[1] }) : t('game.maxed')}</span>
         </p>
       )}
 

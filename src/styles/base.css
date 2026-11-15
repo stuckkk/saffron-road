@@ -60,7 +60,6 @@ label { display: grid; gap: 6px; font-size: .9rem; color: var(--muted); }
 .coin { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffe08a, var(--accent) 70%); box-shadow: inset 0 0 0 1.5px #b87400; }
 .gold-big .coin { width: 18px; height: 18px; }
 .gold-float { position: absolute; right: 0; bottom: 100%; font-size: .9rem; color: #ffe08a; pointer-events: none; animation: fade-out 1.6s forwards; }
-.crown { color: var(--accent); flex: none; }
 .card-back { display: inline-block; width: 11px; height: 15px; border-radius: 2px; background: repeating-linear-gradient(45deg, #6a5fa8 0 2px, #4a4183 2px 4px); border: 1px solid #8d83c9; vertical-align: -2px; }
 
 /* ---------- overlays */

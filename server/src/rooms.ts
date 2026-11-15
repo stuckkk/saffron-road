@@ -3,7 +3,7 @@ import { networkInterfaces } from 'node:os'
 import type { WebSocket } from 'ws'
 import { chooseAction } from '../../src/engine/ai'
 import { MAX_PLAYERS, MIN_PLAYERS } from '../../src/engine/cards'
-import { applyAction, createGame, viewFor } from '../../src/engine/engine'
+import { applyAction, createGame, everyoneDoneTrading, viewFor } from '../../src/engine/engine'
 import type { Action, GameState } from '../../src/engine/types'
 import type { ClientMessage, RoomInfo, ServerMessage } from '../../src/network/protocol'
 
@@ -23,6 +23,8 @@ interface Room {
   members: Member[]
   game: GameState | null
   aiTimer: ReturnType<typeof setTimeout> | null
+  /** When the current market of an AI closes at the latest, for the turn it belongs to. */
+  marketClose: { turn: number; at: number } | null
   lastActivity: number
 }
 
@@ -34,13 +36,13 @@ export interface Connection {
 export interface RoomOptions {
   /** Pause before an AI move, so people can follow what happens. */
   aiDelayMs: number
-  /** How long an AI keeps its market open when people are at the table. */
+  /** The longest an AI keeps its market open while people are still trading. */
   aiMarketMs: number
   idleTimeoutMs: number
   maxRooms: number
 }
 
-const DEFAULTS: RoomOptions = { aiDelayMs: 900, aiMarketMs: 12_000, idleTimeoutMs: 2 * 60 * 60 * 1000, maxRooms: 200 }
+const DEFAULTS: RoomOptions = { aiDelayMs: 900, aiMarketMs: 90_000, idleTimeoutMs: 2 * 60 * 60 * 1000, maxRooms: 200 }
 const AI_NAMES = ['Zahra', 'Idris', 'Mirela', 'Tavin', 'Soraya', 'Kasim', 'Ines', 'Davud']
 const ROOM_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
 
@@ -167,7 +169,7 @@ export class RoomManager {
     switch (msg.type) {
       case 'create': {
         if (this.rooms.size >= this.options.maxRooms) return fail('SERVER_FULL')
-        const room: Room = { id: this.newRoomId(), hostId: '', members: [], game: null, aiTimer: null, lastActivity: Date.now() }
+        const room: Room = { id: this.newRoomId(), hostId: '', members: [], game: null, aiTimer: null, marketClose: null, lastActivity: Date.now() }
         this.rooms.set(room.id, room)
         const member = this.addMember(room, cleanName(msg.name), false, null)
         room.hostId = member.id
@@ -235,6 +237,7 @@ export class RoomManager {
           ;[room.members[i], room.members[j]] = [room.members[j], room.members[i]]
         }
         room.game = createGame(room.members.map(m => ({ name: m.name, isAI: m.isAI })), randomInt(2 ** 31))
+        room.marketClose = null
         this.broadcast(room)
         return this.scheduleAI(room)
       }
@@ -305,9 +308,10 @@ export class RoomManager {
       closing = { index, action }
     }
     if (!closing) return null
-    // Give people time to make the AI an offer before it closes its market.
-    const humans = game.players.some(p => !p.isAI)
-    return { ...closing, delay: humans ? this.options.aiMarketMs : this.options.aiDelayMs }
+    // The AI keeps its market open until every person at the table is done trading, or until time runs out.
+    if (everyoneDoneTrading(game)) return { ...closing, delay: this.options.aiDelayMs }
+    if (room.marketClose?.turn !== game.turn) room.marketClose = { turn: game.turn, at: Date.now() + this.options.aiMarketMs }
+    return { ...closing, delay: Math.max(this.options.aiDelayMs, room.marketClose.at - Date.now()) }
   }
 
   private scheduleAI(room: Room): void {

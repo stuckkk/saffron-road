@@ -13,8 +13,6 @@
 .card-selected { box-shadow: 0 0 0 3px var(--accent), 0 2px 0 #0004; transform: translateY(-4px); }
 .card-selected:hover { transform: translateY(-4px); }
 .card-tag { position: absolute; top: -9px; right: -6px; background: var(--accent); color: var(--accent-ink); font-size: .7rem; font-weight: 700; border-radius: 99px; padding: 1px 7px; }
-.card-crown { position: absolute; top: 3px; left: 4px; line-height: 0; }
-.card-crown .crown { color: #b87400; }
 .cards { display: flex; flex-wrap: wrap; gap: 10px 8px; }
 .caravan { flex-wrap: nowrap; overflow-x: auto; padding: 12px 8px 6px 4px; margin: -6px -4px 0; }
 
@@ -27,3 +25,63 @@
 .chip { --spice: #888; display: inline-flex; align-items: center; gap: 4px; background: var(--card); color: var(--card-ink); border-radius: 99px; padding: 1px 8px 1px 5px; font: inherit; font-size: .8rem; font-weight: 600; border: 1.5px solid var(--spice); }
 .chip em { font-style: normal; font-size: .65rem; text-transform: uppercase; color: #6a5f80; }
 .chip-remove { cursor: pointer; min-height: 30px; }
+
+/* How many copies of the spice the game holds, in the corner like on a printed deck. */
+.card-count {
+  position: absolute; top: 4px; left: 4px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 5px;
+  display: grid; place-items: center; background: var(--spice); color: #fff; font-size: .68rem; font-weight: 800;
+  line-height: 1; font-variant-numeric: tabular-nums; box-shadow: inset 0 0 0 1px #0002;
+}
+.card-sm .card-count { top: 3px; left: 3px; min-width: 15px; height: 15px; font-size: .6rem; border-radius: 4px; }
+
+/* ---------- card detail sheet */
+.spice-sheet { width: min(480px, 100%); }
+.spice-hero { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: var(--s2); }
+.hero-nav {
+  width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--raised); color: var(--ink);
+  font: inherit; font-size: 1.6rem; line-height: 1; cursor: pointer; display: grid; place-items: center; padding: 0 0 3px;
+}
+.hero-nav:hover:not(:disabled) { background: #463f78; }
+.hero-nav:disabled { opacity: .25; cursor: default; }
+.hero-card {
+  position: relative; justify-self: center; width: min(220px, 100%); padding: 30px 16px 18px; border-radius: 18px;
+  background: radial-gradient(circle at 50% 32%, color-mix(in srgb, var(--spice) 22%, var(--card)), transparent 62%), linear-gradient(var(--card), #efe2c6);
+  border: 3px solid var(--spice); color: var(--card-ink); display: grid; justify-items: center; gap: 6px; text-align: center;
+  box-shadow: inset 0 0 0 5px #fff8, 0 12px 32px #0007; animation: card-in .22s ease-out;
+}
+.hero-card h2 { font-size: 1.6rem; color: var(--card-ink); }
+.hero-card .card-count { top: 10px; left: 10px; min-width: 28px; height: 28px; font-size: .9rem; border-radius: 8px; }
+.hero-card .card-tag { top: -11px; right: -8px; font-size: .78rem; padding: 2px 9px; }
+.hero-rarity { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--card); background: var(--spice); border-radius: 99px; padding: 2px 10px; }
+.hero-total { font-size: .8rem; color: #6a5f80; margin-top: -2px; }
+.hero-note { color: var(--accent); margin-top: calc(-1 * var(--s2)); }
+
+.steps-track { display: grid; gap: 6px; }
+.track-step {
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px 4px;
+  display: grid; justify-items: center; gap: 5px; text-align: center; min-width: 0;
+}
+.track-cards { font-weight: 700; font-size: .85rem; }
+.track-coins { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; min-height: 13px; }
+.track-coins .coin { width: 13px; height: 13px; }
+.track-gold { font-size: .75rem; color: var(--muted); }
+.track-step.is-reached { border-color: color-mix(in srgb, var(--spice) 70%, #fff); background: color-mix(in srgb, var(--spice) 28%, var(--bg-2)); }
+.track-step.is-next { border: 1px dashed var(--accent); }
+
+.where-bar { display: flex; gap: 2px; height: 14px; border-radius: 99px; overflow: hidden; background: var(--bg-2); }
+.where-bar span { min-width: 6px; }
+.where-inCaravan { background: color-mix(in srgb, var(--spice) 55%, #fff); }
+.where-onStalls { background: color-mix(in srgb, var(--spice) 85%, #fff); }
+.where-inMarket { background: var(--ok); }
+.where-asGold { background: radial-gradient(circle at 35% 30%, #ffe08a, var(--accent) 75%); }
+.where-unknown { background: repeating-linear-gradient(45deg, #6a5fa8 0 3px, #4a4183 3px 6px); }
+.where-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 16px; }
+.where-legend li { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
+.where-legend li span { min-width: 0; }
+.where-legend li b { margin-left: auto; font-variant-numeric: tabular-nums; }
+.where-legend i { width: 10px; height: 10px; border-radius: 3px; flex: none; margin-top: .4em; }
+.where-legend .is-zero { opacity: .5; }
+@media (max-width: 420px) { .where-legend { grid-template-columns: 1fr; } }
+
+@keyframes card-in { from { opacity: 0; transform: translateY(8px) scale(.95); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .hero-card { animation: none; } }

@@ -1,6 +1,6 @@
 import {
-  buildDeck, DRAW_COUNT, HAND_SIZE, isSpice, MARKET_SIZE, MAX_PLAYERS, MAX_STALLS, MIN_PLAYERS,
-  runOutLimit, saleGold, SPICES, STALL_COST, START_STALLS, type Spice,
+  buildDeck, DECK_COUNT, DRAW_COUNT, HAND_SIZE, isSpice, MARKET_SIZE, MAX_PLAYERS, MAX_STALLS, MIN_PLAYERS,
+  saleGold, SPICES, STALL_COST, START_STALLS, type Spice,
 } from './cards'
 import type {
   Action, ActionResult, GameState, GameView, LogEntry, Offer, OfferContent, PlayerState,
@@ -44,6 +44,7 @@ export function createGame(seats: { name: string; isAI: boolean }[], seed: numbe
       stalls: Array.from({ length: START_STALLS }, () => ({ spice: null, count: 0 })),
       gold: 0,
       pending: [],
+      doneTrading: false,
     })),
     deck: [],
     discard: [],
@@ -52,10 +53,8 @@ export function createGame(seats: { name: string; isAI: boolean }[], seed: numbe
     active: 0,
     stocked: 0,
     turn: 1,
-    royalOrder: 'pepper',
     runOuts: 0,
-    runOutLimit: runOutLimit(seats.length),
-    finalRound: false,
+    goldCards: Object.fromEntries(SPICES.map(s => [s, 0])) as Record<Spice, number>,
     offers: [],
     nextOfferId: 1,
     posted: [],
@@ -65,11 +64,10 @@ export function createGame(seats: { name: string; isAI: boolean }[], seed: numbe
     winners: null,
   }
   state.deck = shuffle(state, buildDeck())
-  state.royalOrder = SPICES[Math.floor(nextRandom(state) * SPICES.length)]
   for (let i = 0; i < HAND_SIZE; i++) {
     for (const p of state.players) p.caravan.push(state.deck.pop()!)
   }
-  log(state, { key: 'start', spice: state.royalOrder })
+  log(state, { key: 'start' })
   return state
 }
 
@@ -80,38 +78,33 @@ function log(state: GameState, entry: Omit<LogEntry, 'seq'>): void {
   if (state.log.length > LOG_LIMIT) state.log.splice(0, state.log.length - LOG_LIMIT)
 }
 
-function reshuffle(state: GameState): void {
-  if (state.discard.length === 0) return
+/** Shuffle the discard pile into a new deck, if the deck is empty and a new deck is still allowed. */
+function maybeReshuffle(state: GameState): void {
+  if (state.deck.length > 0 || state.discard.length === 0 || state.runOuts >= DECK_COUNT - 1) return
   state.deck = shuffle(state, state.discard)
   state.discard = []
-  const others = SPICES.filter(s => s !== state.royalOrder)
-  state.royalOrder = others[Math.floor(nextRandom(state) * others.length)]
-  log(state, { key: 'reshuffle', spice: state.royalOrder })
-}
-
-function noteRunOut(state: GameState): void {
   state.runOuts++
-  if (state.runOuts >= state.runOutLimit && !state.finalRound) {
-    state.finalRound = true
-    log(state, { key: 'finalRound' })
-  }
+  log(state, { key: state.runOuts === DECK_COUNT - 1 ? 'lastDeck' : 'reshuffle', n: state.runOuts + 1 })
 }
 
-function drawCard(state: GameState): Spice | null {
-  if (state.deck.length === 0) {
-    reshuffle(state)
-    if (state.deck.length === 0) {
-      // Nothing left anywhere: count it, so a game can never go on forever.
-      noteRunOut(state)
-      return null
-    }
+/** Cards that can still be drawn: the deck, plus the discard pile while a new deck is still allowed. */
+function drawable(state: GameState): number {
+  return state.deck.length + (state.runOuts < DECK_COUNT - 1 ? state.discard.length : 0)
+}
+
+/**
+ * Draw `n` cards, shuffling a new deck when the current one runs out.
+ * Returns null, drawing nothing, when there are not enough cards left: the game is over then.
+ */
+function drawCards(state: GameState, n: number): Spice[] | null {
+  if (drawable(state) < n) return null
+  const cards: Spice[] = []
+  for (let i = 0; i < n; i++) {
+    maybeReshuffle(state)
+    cards.push(state.deck.pop()!)
   }
-  const card = state.deck.pop()!
-  if (state.deck.length === 0) {
-    noteRunOut(state)
-    reshuffle(state)
-  }
-  return card
+  maybeReshuffle(state)
+  return cards
 }
 
 export function canPlace(player: Pick<PlayerState, 'stalls'>, spice: Spice, stall: number): boolean {
@@ -126,20 +119,20 @@ export function canSell(player: Pick<PlayerState, 'stalls'>, stall: number): boo
   return st.count >= 2 || player.stalls.every(s => s.count <= 1)
 }
 
-/** Gold a stall would pay right now, Royal Order bonus included. */
-export function stallSaleValue(spice: Spice | null, count: number, royalOrder: Spice): number {
-  if (!spice || count === 0) return 0
-  const gold = saleGold(spice, count)
-  return gold > 0 && spice === royalOrder ? gold + 1 : gold
+/** Gold a stall would pay right now. */
+export function stallSaleValue(spice: Spice | null, count: number): number {
+  return spice && count > 0 ? saleGold(spice, count) : 0
 }
 
 function sellStall(state: GameState, pi: number, si: number): void {
   const player = state.players[pi]
   const st = player.stalls[si]
   if (!st.spice || st.count === 0) return
-  const gold = stallSaleValue(st.spice, st.count, state.royalOrder)
+  const gold = stallSaleValue(st.spice, st.count)
+  // The cards you are paid with leave the game as your gold; the rest go to the discard pile.
   player.gold += gold
-  for (let i = 0; i < st.count; i++) state.discard.push(st.spice)
+  state.goldCards[st.spice] += gold
+  for (let i = gold; i < st.count; i++) state.discard.push(st.spice)
   log(state, { key: 'sell', player: pi, spice: st.spice, n: st.count, gold })
   st.spice = null
   st.count = 0
@@ -204,25 +197,24 @@ function finishGame(state: GameState): void {
 
 function endTurn(state: GameState): void {
   const player = state.players[state.active]
-  let drawn = 0
-  for (let i = 0; i < DRAW_COUNT; i++) {
-    const card = drawCard(state)
-    if (card) {
-      player.caravan.push(card)
-      drawn++
-    }
-  }
-  log(state, { key: 'resupply', player: state.active, n: drawn })
   state.offers = []
   state.posted = []
-  if (state.finalRound && state.active === state.players.length - 1) {
+  const cards = drawCards(state, DRAW_COUNT)
+  if (!cards) {
     finishGame(state)
     return
   }
+  player.caravan.push(...cards)
+  log(state, { key: 'resupply', player: state.active, n: cards.length })
   state.active = (state.active + 1) % state.players.length
   state.turn++
   state.phase = 'stock'
   state.stocked = 0
+}
+
+/** Every person other than the active player has said they are done trading. */
+export function everyoneDoneTrading(state: GameState): boolean {
+  return state.players.every((p, i) => i === state.active || p.isAI || p.doneTrading)
 }
 
 function maybeEndTurn(state: GameState): void {
@@ -264,10 +256,13 @@ function perform(state: GameState, pi: number, action: Action): string | null {
     case 'endStock': {
       if (!isActive || state.phase !== 'stock') return 'NOT_NOW'
       if (state.stocked === 0 && player.caravan.length > 0) return 'MUST_STOCK_FIRST'
-      for (let i = 0; i < MARKET_SIZE; i++) {
-        const card = drawCard(state)
-        if (card) state.market.push(card)
+      const cards = drawCards(state, MARKET_SIZE)
+      if (!cards) {
+        finishGame(state)
+        return null
       }
+      state.market.push(...cards)
+      for (const p of state.players) p.doneTrading = false
       state.phase = 'market'
       log(state, { key: 'market', player: pi })
       return null
@@ -326,6 +321,9 @@ function perform(state: GameState, pi: number, action: Action): string | null {
       state.offers.push(offer)
       const sig = offerSignature(pi, offer)
       if (!state.posted.includes(sig)) state.posted.push(sig)
+      // Making an offer means you are still trading; a new offer from the active player reopens trading for whoever it is for.
+      player.doneTrading = false
+      if (isActive) state.players.forEach((p, i) => { if (to === null || i === to) p.doneTrading = false })
       log(state, { key: 'offer', player: pi, ...(to !== null ? { other: to } : {}) })
       return null
     }
@@ -361,6 +359,11 @@ function perform(state: GameState, pi: number, action: Action): string | null {
       state.offers = state.offers.filter(o => o !== offer)
       return null
     }
+    case 'doneTrading': {
+      if (isActive || state.phase !== 'market') return 'NOT_NOW'
+      player.doneTrading = action.done === true
+      return null
+    }
     case 'closeMarket': {
       if (!isActive || state.phase !== 'market') return 'NOT_NOW'
       player.pending.push(...state.market)
@@ -389,6 +392,7 @@ export function viewFor(state: GameState, you: number): GameView {
       stalls: p.stalls.map(s => ({ ...s })),
       gold: p.gold,
       pending: p.pending.slice(),
+      doneTrading: p.doneTrading,
     })),
     deckCount: state.deck.length,
     discardCount: state.discard.length,
@@ -397,10 +401,8 @@ export function viewFor(state: GameState, you: number): GameView {
     active: state.active,
     stocked: state.stocked,
     turn: state.turn,
-    royalOrder: state.royalOrder,
     runOuts: state.runOuts,
-    runOutLimit: state.runOutLimit,
-    finalRound: state.finalRound,
+    goldCards: { ...state.goldCards },
     offers: state.offers.map(o => ({ ...o })),
     log: state.log.slice(),
     winners: state.winners,
