@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MAX_STALLS, STALL_COST } from '../engine/cards'
 import type { Action, GameView } from '../engine/types'
+import { CardDetail } from './CardDetail'
 import { Gold } from './Gold'
 import { SpiceCard } from './SpiceCard'
 import { StallView } from './StallView'
@@ -13,17 +15,20 @@ interface Props {
   onPick: (index: number) => void
   /** Caravan cards currently in the offer draft (indexes). */
   offered: number[]
-  /** Set while the market is open: tapping a caravan card puts it into an offer. */
+  /** Set while an offer is being put together: tapping a caravan card adds it to the offer or takes it out. */
   onOffer?: (index: number) => void
+  /** Set while the market is open: start an offer with this caravan card (from the card's detail view). */
+  onOfferCard?: (index: number) => void
 }
 
 /** My side of the table: stalls on top, caravan below. Always in this order, in every phase. */
-export function MyArea({ view, ts, act, onPick, offered, onOffer }: Props) {
+export function MyArea({ view, ts, act, onPick, offered, onOffer, onOfferCard }: Props) {
   const { t } = useTranslation()
   const { me, caravan, isActive, placing } = ts
   const ended = view.phase === 'ended'
   const stockingFront = placing !== null && !ts.placingPending
   const canBuy = isActive && !ended && me.gold >= STALL_COST
+  const [detail, setDetail] = useState<number | null>(null)
 
   return (
     <section className={`zone mine ${isActive ? 'is-active' : ''}`} aria-label={t('game.stalls')}>
@@ -71,12 +76,18 @@ export function MyArea({ view, ts, act, onPick, offered, onOffer }: Props) {
             <SpiceCard
               key={i} spice={s} tag={i === 0 ? t('game.front') : undefined}
               selected={(i === 0 && stockingFront) || offered.includes(i)}
-              onClick={onOffer ? () => onOffer(i) : undefined}
+              onClick={onOffer ? () => onOffer(i) : () => setDetail(i)}
             />
           ))}
         </div>
       ) : (
         <p className="muted small">{t('game.caravanEmpty')}</p>
+      )}
+      {detail !== null && caravan.length > 0 && !onOffer && (
+        <CardDetail
+          view={view} index={Math.min(detail, caravan.length - 1)} onIndex={setDetail} onClose={() => setDetail(null)}
+          onOffer={onOfferCard ? i => { setDetail(null); onOfferCard(i) } : undefined}
+        />
       )}
     </section>
   )

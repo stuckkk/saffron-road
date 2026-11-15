@@ -10,7 +10,6 @@ import { emptyDraft, OfferBuilder, toggled, type Draft } from './OfferBuilder'
 import { OfferList } from './OfferList'
 import { Opponents } from './Opponents'
 import { SidePanel, type SideTab } from './SidePanel'
-import { RoyalContext } from './SpiceCard'
 import { TableCentre } from './TableCentre'
 import { isForMe, turnState } from './turnState'
 
@@ -55,7 +54,7 @@ export function Game({ session, onRules }: { session: Session; onRules: () => vo
   const leave = () => session.send({ type: 'leave' })
 
   return (
-    <RoyalContext.Provider value={view.royalOrder}>
+    <>
       <main className="game">
         <header className="g-head">
           <h1>{t('app.title')}</h1>
@@ -81,7 +80,8 @@ export function Game({ session, onRules }: { session: Session; onRules: () => vo
 
         <MyArea
           view={view} ts={ts} act={act} onPick={setPick} offered={draft.give}
-          onOffer={market ? i => openBuilder({ give: toggled(draft.give, i) }) : undefined}
+          onOffer={building ? i => change({ give: toggled(draft.give, i) }) : undefined}
+          onOfferCard={market ? i => openBuilder({ give: draft.give.includes(i) ? draft.give : toggled(draft.give, i) }) : undefined}
         />
 
         <SidePanel view={view} tab={tab} onTab={setTab} open={sideOpen} onClose={() => setSideOpen(false)} waiting={waiting}>
@@ -110,6 +110,6 @@ export function Game({ session, onRules }: { session: Session; onRules: () => vo
           </div>
         )}
       </main>
-    </RoyalContext.Provider>
+    </>
   )
 }

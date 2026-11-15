@@ -3,7 +3,7 @@ import { stallSaleValue } from '../engine/engine'
 import type { GameView } from '../engine/types'
 import type { RoomInfo } from '../network/protocol'
 import { Gold } from './Gold'
-import { Crown, SPICE_COLOR, SpiceChips, SpiceIcon } from './SpiceCard'
+import { SPICE_COLOR, SpiceChips, SpiceIcon } from './SpiceCard'
 
 interface Props {
   view: GameView
@@ -34,6 +34,7 @@ export function Opponents({ view, room, onHandToAI }: Props) {
             </div>
             <div className="opponent-meta small">
               {active && view.phase !== 'ended' && <span className="badge badge-gold">{t(`phase.${view.phase}`)}</span>}
+              {!active && view.phase === 'market' && p.doneTrading && <span className="badge">{t('trade.doneBadge')}</span>}
               <span className="muted"><span className="card-back" aria-hidden="true" /> {t('game.cards', { count: p.caravanCount })}</span>
             </div>
             <ul className="mini-stalls">
@@ -43,10 +44,9 @@ export function Opponents({ view, room, onHandToAI }: Props) {
                     <>
                       <SpiceIcon spice={st.spice} size={16} />
                       <span className="mini-name">{t(`spice.${st.spice}`)}</span>
-                      {st.spice === view.royalOrder && <Crown size={12} />}
                       <b>×{st.count}</b>
-                      <span className="mini-worth" title={t('game.worth', { gold: stallSaleValue(st.spice, st.count, view.royalOrder) })}>
-                        {stallSaleValue(st.spice, st.count, view.royalOrder)}
+                      <span className="mini-worth" title={t('game.worth', { gold: stallSaleValue(st.spice, st.count) })}>
+                        {stallSaleValue(st.spice, st.count)}
                       </span>
                     </>
                   ) : (

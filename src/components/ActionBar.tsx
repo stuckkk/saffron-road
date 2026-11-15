@@ -41,6 +41,11 @@ export function ActionBar({ view, ts, act, waiting, onMakeOffer, onOpenSide }: P
         {market && (
           <button type="button" className={`btn ${isActive ? '' : 'btn-primary'}`} onClick={onMakeOffer}>{t('trade.make')}</button>
         )}
+        {market && !isActive && (
+          <button type="button" className="btn" aria-pressed={ts.me.doneTrading} onClick={() => act({ type: 'doneTrading', done: !ts.me.doneTrading })}>
+            {ts.me.doneTrading ? t('trade.keepTrading') : t('trade.doneTrading')}
+          </button>
+        )}
         {isActive && view.phase === 'stock' && (
           <button type="button" className="btn btn-primary" disabled={view.stocked === 0 && ts.caravan.length > 0} onClick={() => act({ type: 'endStock' })}>
             {t('game.openMarket')}

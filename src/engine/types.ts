@@ -16,6 +16,8 @@ export interface PlayerState {
   gold: number
   /** Cards received this turn that must be stocked before the turn can end. */
   pending: Spice[]
+  /** Market phase: this player has said they are done trading (only matters for players other than the active one). */
+  doneTrading: boolean
 }
 
 export interface OfferContent {
@@ -57,10 +59,10 @@ export interface GameState {
   /** Cards the active player has stocked from the caravan this turn. */
   stocked: number
   turn: number
-  royalOrder: Spice
+  /** How often the discard pile has been shuffled into a new deck (at most DECK_COUNT - 1). */
   runOuts: number
-  runOutLimit: number
-  finalRound: boolean
+  /** Cards paid out as gold, by spice. They have left the game for good. */
+  goldCards: Record<Spice, number>
   offers: Offer[]
   nextOfferId: number
   /** Signatures of offers posted this turn (the AI uses it to avoid repeating itself). */
@@ -80,6 +82,7 @@ export type Action =
   | ({ type: 'propose' } & OfferContent)
   | { type: 'accept'; offerId: number }
   | { type: 'reject'; offerId: number }
+  | { type: 'doneTrading'; done: boolean }
   | { type: 'withdraw'; offerId: number }
   | { type: 'closeMarket' }
 
@@ -95,6 +98,7 @@ export interface PlayerView {
   stalls: Stall[]
   gold: number
   pending: Spice[]
+  doneTrading: boolean
 }
 
 export interface GameView {
@@ -107,10 +111,8 @@ export interface GameView {
   active: number
   stocked: number
   turn: number
-  royalOrder: Spice
   runOuts: number
-  runOutLimit: number
-  finalRound: boolean
+  goldCards: Record<Spice, number>
   offers: Offer[]
   log: LogEntry[]
   winners: number[] | null

@@ -41,9 +41,6 @@
   },
   "game": {
     "deck": "Stapel",
-    "finalRound": "Letzte Runde",
-    "royalOrder": "Königliche Order",
-    "royalHint": "+1 Gold beim Verkauf",
     "gold": "Gold",
     "caravan": "Deine Karawane",
     "front": "vorn",
@@ -88,7 +85,8 @@
     "turn": "Zug",
     "leaveAsk": "Diesen Tisch verlassen?",
     "stay": "Weiterspielen",
-    "worthNone": "Noch kein Gold"
+    "worthNone": "Noch kein Gold",
+    "lastDeck": "Letzter Stapel"
   },
   "hint": {
     "stockFirst": "Lagere die vorderste Karte deiner Karawane an einem Stand ein.",
@@ -99,7 +97,8 @@
     "marketOther": "{{name}} handelt. Mach ein Angebot oder beantworte eines.",
     "deliverYou": "Lagere die erhaltenen Karten ein.",
     "deliverWait": "Warte, bis {{names}} die Karten eingelagert hat.",
-    "wait": "{{name}} bestückt die Stände."
+    "wait": "{{name}} bestückt die Stände.",
+    "marketDone": "Du bist fertig mit Handeln. Warte, bis {{name}} den Markt schließt."
   },
   "trade": {
     "offers": "Angebote",
@@ -130,7 +129,10 @@
     "others": "Andere Angebote ({{n}})",
     "for": "gegen",
     "onlyMarket": "Gehandelt wird, sobald der Markt offen ist.",
-    "tapHint": "Tippe Karten an, um sie hinzuzufügen, und einen Chip, um ihn zu entfernen."
+    "tapHint": "Tippe Karten an, um sie hinzuzufügen, und einen Chip, um ihn zu entfernen.",
+    "doneTrading": "Fertig mit Handeln",
+    "keepTrading": "Weiter handeln",
+    "doneBadge": "Fertig"
   },
   "spice": {
     "pepper": "Pfeffer",
@@ -140,11 +142,10 @@
     "clove": "Nelke",
     "cardamom": "Kardamom",
     "nutmeg": "Muskat",
-    "vanilla": "Vanille",
     "saffron": "Safran"
   },
   "log": {
-    "start": "Das Spiel beginnt. Königliche Order: {{spice}}.",
+    "start": "Das Spiel beginnt.",
     "stock": "{{player}} lagert {{spice}} ein.",
     "market": "{{player}} eröffnet den Markt.",
     "sell": "{{player}} verkauft {{n}} × {{spice}} für {{gold}} Gold.",
@@ -154,9 +155,9 @@
     "reject": "{{player}} lehnt das Angebot von {{other}} ab.",
     "closeMarket": "{{player}} schließt den Markt.",
     "resupply": "{{player}} zieht {{n}} Karten.",
-    "reshuffle": "Der Stapel wird neu gemischt. Neue Königliche Order: {{spice}}.",
-    "finalRound": "Der Stapel ist zum letzten Mal aufgebraucht: Das ist die letzte Runde.",
-    "end": "Alle Stände sind verkauft. Das Spiel ist vorbei."
+    "reshuffle": "Die Ablage wird zu einem neuen Stapel gemischt: Stapel {{n}}.",
+    "end": "Nicht mehr genug Karten für den nächsten Schritt: Das Spiel ist vorbei, alle Stände werden verkauft.",
+    "lastDeck": "Die Ablage wird zum letzten Stapel gemischt. Reicht er nicht mehr, endet das Spiel."
   },
   "error": {
     "NO_SUCH_ROOM": "Diesen Tisch gibt es nicht (mehr).",
@@ -195,7 +196,7 @@
       },
       {
         "h": "2. Markt",
-        "p": "Zwei Karten vom Stapel werden im Markt ausgelegt. Jetzt dürfen alle mit dir handeln, und nur mit dir: Karawanenkarten und Marktkarten, in beliebiger Zahl, auch als Geschenk. Wenn du den Markt schließt, gehen die übrigen Marktkarten an dich."
+        "p": "Zwei Karten vom Stapel werden im Markt ausgelegt. Jetzt dürfen alle mit dir handeln, und nur mit dir: Karawanenkarten und Marktkarten, in beliebiger Zahl, auch als Geschenk. Wenn du den Markt schließt, gehen die übrigen Marktkarten an dich. Bist du nicht am Zug und willst nichts mehr tauschen, drücke Fertig mit Handeln. Ein KI-Händler schließt seinen Markt, sobald alle Menschen am Tisch fertig sind, spätestens aber nach 1,5 Minuten."
       },
       {
         "h": "3. Liefern",
@@ -207,15 +208,11 @@
       },
       {
         "h": "Verkaufen",
-        "p": "Du darfst jederzeit einen Stand verkaufen, auch außerhalb deines Zuges. Je mehr Karten er hält, desto mehr Gold bringt er (siehe Tabelle). Alle seine Karten kommen auf die Ablage. Ein Stand mit einer einzelnen Karte darf nur verkauft werden, wenn keiner deiner anderen Stände mehr als eine Karte hält."
-      },
-      {
-        "h": "Königliche Order",
-        "p": "Der Palast verlangt immer ein Gewürz. Sein Verkauf bringt 1 Gold extra, sofern der Verkauf überhaupt etwas einbringt. Immer wenn der Stapel neu gemischt wird, wechselt die Königliche Order zu einem anderen Gewürz."
+        "p": "Du darfst jederzeit einen Stand verkaufen, auch außerhalb deines Zuges. Je mehr Karten er hält, desto mehr Gold bringt er (siehe Tabelle). Die Karten, mit denen du bezahlt wirst, verlassen als dein Gold das Spiel; die übrigen kommen auf die Ablage. Ein Stand mit einer einzelnen Karte darf nur verkauft werden, wenn keiner deiner anderen Stände mehr als eine Karte hält."
       },
       {
         "h": "Spielende",
-        "p": "Ist der Stapel aufgebraucht, wird die Ablage zu einem neuen Stapel gemischt. Das Spiel endet, sobald der Stapel zweimal aufgebraucht war (dreimal bei 4 oder 5 Spielern): Die laufende Runde wird zu Ende gespielt, damit alle gleich oft am Zug waren. Dann werden alle Stände verkauft. Das meiste Gold gewinnt, bei Gleichstand die längere Karawane."
+        "p": "Ist der Stapel aufgebraucht, wird die Ablage zu einem neuen Stapel gemischt. Das passiert zweimal, ein Spiel hat also drei Stapel. Sobald der letzte Stapel nicht mehr genug Karten für den nächsten Schritt hat (zwei für den Markt, drei für den Nachschub), endet das Spiel sofort. Dann werden alle Stände verkauft. Das meiste Gold gewinnt, bei Gleichstand die längere Karawane."
       }
     ],
     "table": "Verkaufstabelle",
@@ -229,5 +226,30 @@
     "deliver": "Liefern",
     "resupply": "Nachschub",
     "ended": "Beendet"
+  },
+  "card": {
+    "inGame_one": "{{count}} Karte dieses Gewürzes im Spiel",
+    "inGame_other": "{{count}} Karten dieses Gewürzes im Spiel"
+  },
+  "detail": {
+    "position": "Karte {{n}} von {{total}} in deiner Karawane",
+    "front": "Wird als Nächstes eingelagert",
+    "common": "Häufig",
+    "uncommon": "Gelegentlich",
+    "rare": "Selten",
+    "ofTotal": "{{count}} von {{total}} Karten",
+    "sales": "Was ein Stand einbringt",
+    "where": "Wo die {{count}} Karten sind",
+    "inCaravan": "Deine Karawane",
+    "onStalls": "Auf Ständen",
+    "inMarket": "Markt",
+    "unknown": "Stapel, Ablage, andere Karawanen",
+    "yourStall": "Dein Stand {{n}} hält {{count}}",
+    "noStall": "Noch keiner deiner Stände hält {{spice}}. Es braucht einen leeren Stand.",
+    "prev": "Vorherige Karte",
+    "next": "Nächste Karte",
+    "gold": "{{gold}} Gold",
+    "offer": "Diese Karte anbieten",
+    "asGold": "Als Gold verkauft (aus dem Spiel)"
   }
 }

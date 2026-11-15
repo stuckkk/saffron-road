@@ -41,9 +41,6 @@
   },
   "game": {
     "deck": "Deck",
-    "finalRound": "Final round",
-    "royalOrder": "Royal Order",
-    "royalHint": "+1 gold when you sell it",
     "gold": "gold",
     "caravan": "Your caravan",
     "front": "next",
@@ -88,7 +85,8 @@
     "turn": "Turn",
     "leaveAsk": "Leave this table?",
     "stay": "Keep playing",
-    "worthNone": "No gold yet"
+    "worthNone": "No gold yet",
+    "lastDeck": "Last deck"
   },
   "hint": {
     "stockFirst": "Stock the front card of your caravan on a stall.",
@@ -99,7 +97,8 @@
     "marketOther": "{{name}} is trading. Make an offer or answer one.",
     "deliverYou": "Stock the cards you received.",
     "deliverWait": "Waiting for {{names}} to stock their cards.",
-    "wait": "{{name}} is stocking the stalls."
+    "wait": "{{name}} is stocking the stalls.",
+    "marketDone": "You are done trading. Waiting for {{name}} to close the market."
   },
   "trade": {
     "offers": "Offers",
@@ -130,7 +129,10 @@
     "others": "Other offers ({{n}})",
     "for": "for",
     "onlyMarket": "Trading starts when the market opens.",
-    "tapHint": "Tap cards to add them, tap a chip to remove it."
+    "tapHint": "Tap cards to add them, tap a chip to remove it.",
+    "doneTrading": "Done trading",
+    "keepTrading": "Keep trading",
+    "doneBadge": "Done trading"
   },
   "spice": {
     "pepper": "Pepper",
@@ -140,11 +142,10 @@
     "clove": "Clove",
     "cardamom": "Cardamom",
     "nutmeg": "Nutmeg",
-    "vanilla": "Vanilla",
     "saffron": "Saffron"
   },
   "log": {
-    "start": "The game begins. Royal Order: {{spice}}.",
+    "start": "The game begins.",
     "stock": "{{player}} stocks {{spice}}.",
     "market": "{{player}} opens the market.",
     "sell": "{{player}} sells {{n}} × {{spice}} for {{gold}} gold.",
@@ -154,9 +155,9 @@
     "reject": "{{player}} declines {{other}}'s offer.",
     "closeMarket": "{{player}} closes the market.",
     "resupply": "{{player}} draws {{n}} cards.",
-    "reshuffle": "The deck is reshuffled. New Royal Order: {{spice}}.",
-    "finalRound": "The deck ran out for the last time: this is the final round.",
-    "end": "All stalls are sold. The game is over."
+    "reshuffle": "The discard pile is shuffled into a new deck: deck {{n}}.",
+    "end": "Not enough cards left for the next step: the game is over and all stalls are sold.",
+    "lastDeck": "The discard pile is shuffled into the last deck. When it runs short, the game ends."
   },
   "error": {
     "NO_SUCH_ROOM": "This table does not exist (any more).",
@@ -195,7 +196,7 @@
       },
       {
         "h": "2. Market",
-        "p": "Two cards from the deck are laid out in the market. Now everybody may trade with you, and only with you: caravan cards and market cards, in any numbers, gifts included. When you close the market, the cards still lying there go to you."
+        "p": "Two cards from the deck are laid out in the market. Now everybody may trade with you, and only with you: caravan cards and market cards, in any numbers, gifts included. When you close the market, the cards still lying there go to you. If you are not the active merchant and have nothing more to trade, press Done trading. An AI merchant closes its market as soon as every person at the table is done, or after 1.5 minutes at the latest."
       },
       {
         "h": "3. Deliver",
@@ -207,15 +208,11 @@
       },
       {
         "h": "Selling",
-        "p": "You may sell a stall at any time, even when it is not your turn. The more cards it holds, the more gold it pays (see the table). All its cards go to the discard pile. A stall with a single card can only be sold if none of your other stalls holds more than one."
-      },
-      {
-        "h": "Royal Order",
-        "p": "The palace always demands one spice. Selling it pays 1 extra gold, provided the sale pays anything at all. Whenever the deck is reshuffled, the Royal Order moves to another spice."
+        "p": "You may sell a stall at any time, even when it is not your turn. The more cards it holds, the more gold it pays (see the table). The cards you are paid with leave the game as your gold; the rest go to the discard pile. A stall with a single card can only be sold if none of your other stalls holds more than one."
       },
       {
         "h": "End of the game",
-        "p": "When the deck runs out, the discard pile is shuffled into a new deck. The game ends once the deck has run out twice (three times with 4 or 5 players): the current round is played to its end so everyone has had the same number of turns. Then all stalls are sold. Most gold wins; on a tie, the longer caravan."
+        "p": "When the deck runs out, the discard pile is shuffled into a new deck. This happens twice, so a game uses three decks. As soon as the last deck no longer has enough cards for the next step (two for the market, three to resupply), the game ends right away. Then all stalls are sold. Most gold wins; on a tie, the longer caravan."
       }
     ],
     "table": "Sale table",
@@ -229,5 +226,30 @@
     "deliver": "Deliver",
     "resupply": "Resupply",
     "ended": "Finished"
+  },
+  "card": {
+    "inGame_one": "{{count}} card of this spice in the game",
+    "inGame_other": "{{count}} cards of this spice in the game"
+  },
+  "detail": {
+    "position": "Card {{n}} of {{total}} in your caravan",
+    "front": "Next to be stocked",
+    "common": "Common",
+    "uncommon": "Uncommon",
+    "rare": "Rare",
+    "ofTotal": "{{count}} of {{total}} cards",
+    "sales": "What a stall pays",
+    "where": "Where the {{count}} cards are",
+    "inCaravan": "Your caravan",
+    "onStalls": "On stalls",
+    "inMarket": "Market",
+    "unknown": "Deck, discard pile, other caravans",
+    "yourStall": "Your stall {{n}} holds {{count}}",
+    "noStall": "None of your stalls holds {{spice}} yet. It needs an empty stall.",
+    "prev": "Previous card",
+    "next": "Next card",
+    "gold": "{{gold}} gold",
+    "offer": "Offer this card",
+    "asGold": "Sold as gold (out of the game)"
   }
 }

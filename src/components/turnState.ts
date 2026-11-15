@@ -45,7 +45,8 @@ export function turnState(view: GameView, pick: number, t: TFunction): TurnState
     if (placing && !fits) hint = t('hint.needRoom', { spice: t(`spice.${placing}`) })
     else if (me.pending.length) hint = t('hint.deliverYou')
     else if (view.phase === 'deliver') hint = t('hint.deliverWait', { names: waiting.join(', ') })
-    else hint = isActive ? t('hint.marketActive') : t('hint.marketOther', { name: activeName })
+    else if (isActive) hint = t('hint.marketActive')
+    else hint = me.doneTrading ? t('hint.marketDone', { name: activeName }) : t('hint.marketOther', { name: activeName })
   }
 
   return { me, caravan, isActive, activeName, trading, pendingIndex, placing, placingPending: pendingSpice !== null, needRoom, hint }

@@ -13,10 +13,10 @@ You run one small server; everyone opens it in a browser.
 - On your turn: **stock** the front card (optionally the next one too), open the **market** (two
   cards from the deck), **trade** freely with everyone, then everybody **delivers** (stocks) what
   they received, and you **resupply** with three cards.
-- Sell a stall at any time; the more cards, the more gold. The spice named by the **Royal Order**
-  pays 1 extra gold.
-- The game ends in the round in which the deck runs out for the second time (third time with 4 or 5
-  players). Most gold wins.
+- Sell a stall at any time; the more cards, the more gold. The cards you are paid with leave the game
+  as your gold, the rest go to the discard pile.
+- The discard pile is shuffled into a new deck twice, so a game uses three decks. As soon as the last
+  deck has too few cards for the next step (market or resupply), the game ends. Most gold wins.
 
 The full rules and the sale table are behind the **Rules** button in the app. The card set lives in
 `src/engine/cards.ts`.
@@ -45,7 +45,7 @@ Games live in the server's memory: restarting the server ends them.
 |---|---|---|
 | `PORT` | `8080` | Port to listen on |
 | `AI_DELAY_MS` | `900` | Pause before each AI move |
-| `AI_MARKET_MS` | `12000` | How long an AI keeps its market open for offers when people are playing |
+| `AI_MARKET_MS` | `90000` | The longest an AI keeps its market open while people are still trading; it closes earlier once every person has pressed **Done trading** |
 
 ### Docker
 

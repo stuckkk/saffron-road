@@ -3,7 +3,7 @@ import { createGameServer } from './server'
 
 const PORT = Number(process.env.PORT) || 8080
 
-// Optional pacing overrides (milliseconds): how fast the AI moves, and how long it keeps its market open.
+// Optional pacing overrides (milliseconds): how fast the AI moves, and the longest it keeps its market open.
 const pacing = {
   ...(process.env.AI_DELAY_MS ? { aiDelayMs: Number(process.env.AI_DELAY_MS) } : {}),
   ...(process.env.AI_MARKET_MS ? { aiMarketMs: Number(process.env.AI_MARKET_MS) } : {}),

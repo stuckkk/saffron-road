@@ -24,9 +24,9 @@ export function playOut(players: number, seed: number): { state: GameState; step
     if (!r.ok) throw new Error(`game ${seed}: ${action.type} by ${pi} rejected: ${r.error}`)
     if (action.type === 'accept') trades++
     s = r.state
-    const cards = s.deck.length + s.discard.length + s.market.length + s.players.reduce(
+    const cards = s.deck.length + s.discard.length + s.market.length + Object.values(s.goldCards).reduce((n, g) => n + g, 0) + s.players.reduce(
       (n, p) => n + p.caravan.length + p.pending.length + p.stalls.reduce((m, st) => m + st.count, 0), 0)
-    if (cards !== 110) throw new Error(`game ${seed}: ${cards} cards in play`)
+    if (cards !== 104) throw new Error(`game ${seed}: ${cards} cards in play`)
   }
   return { state: s, steps, trades }
 }
@@ -48,7 +48,8 @@ describe('all-AI simulation', () => {
       console.log(
         `${players}p: ${(turns / games / players).toFixed(1)} turns per player, ` +
         `${(gold / games).toFixed(1)} gold per player, ${(trades / games).toFixed(1)} trades per game`)
-      expect(turns / games / players).toBeGreaterThan(6)
+      // Paid-out cards leave the game, so the later decks are thinner: about 5 turns each with 5 players.
+      expect(turns / games / players).toBeGreaterThan(4)
     })
   }
 })
